@@ -1,0 +1,131 @@
+import pygame
+import random
+
+# Initialize Pygame
+pygame.init()
+
+# Constants
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+FPS = 60
+
+# Setup
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption('Geometry Dash Clone')
+clock = pygame.time.Clock()
+
+# Load assets
+bg_music = pygame.mixer.Sound('background_music.wav')  # Add your background music file
+bg_music.play(-1)
+
+# Block Class
+class Block(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface((50, 50))
+        self.image.fill((255, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.x = 50
+        self.rect.y = SCREEN_HEIGHT - 100
+        self.jump_speed = 0
+        self.gravity = 0.5
+        self.jumping = False
+
+    def update(self):
+        self.rect.y += self.jump_speed
+        if self.jumping:
+            self.jump_speed += self.gravity
+
+        if self.rect.bottom >= SCREEN_HEIGHT - 50:
+            self.rect.bottom = SCREEN_HEIGHT - 50
+            self.jumping = False
+            self.jump_speed = 0
+
+    def jump(self):
+        if not self.jumping:
+            self.jumping = True
+            self.jump_speed = -10
+
+# Main Menu
+def main_menu():
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:  # Press Enter to start
+                    return
+
+        screen.fill(WHITE)
+        font = pygame.font.Font(None, 74)
+        text = font.render("Main Menu", True, BLACK)
+        screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 200))
+        start_text = font.render("Press Enter to Start", True, BLACK)
+        screen.blit(start_text, (SCREEN_WIDTH // 2 - start_text.get_width() // 2, 400))
+        pygame.display.flip()
+        clock.tick(FPS)
+
+# Level function
+def run_level(level):
+    block = Block()
+    all_sprites = pygame.sprite.Group()
+    all_sprites.add(block)
+
+    obstacles = pygame.sprite.Group()
+    for i in range(5):  # Create obstacles
+        obs = pygame.Surface((50, 50))
+        obs.fill((0, 255, 0))
+        obs_rect = obs.get_rect()
+        obs_rect.x = SCREEN_WIDTH + i * 200
+        obs_rect.y = SCREEN_HEIGHT - 50
+        obstacles.add((obs, obs_rect))
+
+    # Game loop
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:  # SPACE to jump
+                    block.jump()
+
+        # Update
+        all_sprites.update()
+
+        # Move obstacles
+        for obs in obstacles:
+            obs[1].x -= 5
+            if obs[1].x < -50:  # Reset position
+                obs[1].x = SCREEN_WIDTH
+                obs[1].y = SCREEN_HEIGHT - random.randint(0, 100)
+
+        # Check for collisions
+        if pygame.sprite.spritecollide(block, obstacles, False):
+            print("Game Over!")
+            return
+
+        # Draw
+        screen.fill((135, 206, 235))  # Light Blue Background
+        all_sprites.draw(screen)
+        for obs in obstacles:
+            screen.blit(obs[0], obs[1])  # Draw obstacles
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+# Game Loop
+def main():
+    while True:
+        main_menu()
+        for i in range(1, 6):  # Run 5 levels
+            run_level(i)
+
+# Run the game
+if __name__ == "__main__":
+    main()
